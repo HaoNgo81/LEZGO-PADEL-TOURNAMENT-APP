@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <title>LezGo Padel – Live Leaderboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    :root {
+      --bg: #0b0b0b;
+      --card: #151515;
+      --primary: #f5c400; /* LezGo gul */
+      --text: #ffffff;
+      --muted: #9ca3af;
+      --green: #22c55e;
+      --red: #ef4444;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(180deg, #000 0%, #111 100%);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 32px 48px;
+      border-bottom: 2px solid #222;
+    }
+
+    header h1 {
+      font-size: 48px;
+      letter-spacing: 1px;
+    }
+
+    header .subtitle {
+      font-size: 22px;
+      color: var(--muted);
+    }
+
+    main {
+      padding: 32px 48px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--card);
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    thead {
+      background: #1f1f1f;
+    }
+
+    th {
+      text-align: left;
+      padding: 20px 16px;
+      font-size: 20px;
+      color: var(--muted);
+    }
+
+    tbody tr {
+      border-top: 1px solid #262626;
+    }
+
+    td {
+      padding: 22px 16px;
+      font-size: 26px;
+    }
+
+    .rank {
+      font-size: 32px;
+      font-weight: bold;
+      width: 80px;
+    }
+
+    .team {
+      font-weight: 600;
+    }
+
+    .wins {
+      color: var(--green);
+      font-weight: bold;
+    }
+
+    .diff.positive {
+      color: var(--green);
+    }
+
+    .diff.negative {
+      color: var(--red);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 24px;
+      right: 48px;
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    /* TV safe */
+    @media (min-width: 1920px) {
+      header h1 { font-size: 56px; }
+      td { font-size: 30px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>LezGo Padel – Leaderboard</h1>
+    <div class="subtitle">Team Mexicano · Live</div>
+  </div>
+  <div class="subtitle" id="clock"></div>
+</header>
+
+<main>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Hold</th>
+        <th>Kampe</th>
+        <th>Wins</th>
+        <th>Point For</th>
+        <th>Point Mod</th>
+        <th>+/-</th>
+      </tr>
+    </thead>
+    <tbody id="leaderboard"></tbody>
+  </table>
+</main>
+
+<footer>
+  www.LezGoPadel.dk
+</footer>
+
+<script>
+  // ==============================
+  // AUTO-ROTERENDE TV-SKÆRM CONFIG
+  // ==============================
+
+  const AUTO_REFRESH_INTERVAL = 30000; // 30 sek data refresh
+  const VIEW_ROTATION_INTERVAL = 20000; // 20 sek pr view
+
+  // Views: leaderboard, playoff, sponsor
+  const views = ["leaderboard", "playoff", "sponsor"];
+  let currentViewIndex = 0;
+
+  // DEMO DATA – erstattes af live data
+  const leaderboardData = [
+    { teamId: "t1", name: "Hao / Jonas", played: 5, wins: 4, pointsFor: 82, pointsAgainst: 61, diff: 21 },
+    { teamId: "t2", name: "Mikkel / Andreas", played: 5, wins: 3, pointsFor: 75, pointsAgainst: 66, diff: 9 },
+    { teamId: "t3", name: "Peter / Simon", played: 5, wins: 2, pointsFor: 68, pointsAgainst: 72, diff: -4 },
+    { teamId: "t4", name: "Lars / Emil", played: 5, wins: 1, pointsFor: 59, pointsAgainst: 78, diff: -19 }
+  ];
+
+  const tbody = document.getElementById("leaderboard");
+
+  function renderLeaderboard() {
+    tbody.innerHTML = "";
+    leaderboardData.forEach((row, index) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="rank">${index + 1}</td>
+        <td class="team">${row.name}</td>
+        <td>${row.played}</td>
+        <td class="wins">${row.wins}</td>
+        <td>${row.pointsFor}</td>
+        <td>${row.pointsAgainst}</td>
+        <td class="diff ${row.diff >= 0 ? "positive" : "negative"}">
+          ${row.diff > 0 ? "+" : ""}${row.diff}
+        </td>`;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderPlayoff() {
+    tbody.innerHTML = `
+      <tr><td colspan="7" style="text-align:center;font-size:40px;padding:80px">
+        🔥 Playoff i gang 🔥<br><br>
+        Semifinaler & Finale vises her
+      </td></tr>`;
+  }
+
+  function renderSponsor() {
+    tbody.innerHTML = `
+      <tr><td colspan="7" style="text-align:center;font-size:42px;padding:80px">
+        🏆 Tak til vores sponsorer 🏆<br><br>
+        <strong>Sport24 · HEAD · Hummel</strong>
+      </td></tr>`;
+  }
+
+  function rotateView() {
+    const view = views[currentViewIndex];
+    if (view === "leaderboard") renderLeaderboard();
+    if (view === "playoff") renderPlayoff();
+    if (view === "sponsor") renderSponsor();
+
+    currentViewIndex = (currentViewIndex + 1) % views.length;
+  }
+
+  function updateClock() {
+    const now = new Date();
+    document.getElementById("clock").innerText = now.toLocaleTimeString("da-DK", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  // INIT
+  rotateView();
+  updateClock();
+
+  // Live clock
+  setInterval(updateClock, 1000);
+
+  // View rotation
+  setInterval(rotateView, VIEW_ROTATION_INTERVAL);
+
+  // Data refresh (klar til API)
+  setInterval(() => {
+    console.log("🔄 Auto-refresh data");
+    // fetch('/api/team-leaderboard').then(...)
+  }, AUTO_REFRESH_INTERVAL);
+</script>
+
+</body>
+</html>
